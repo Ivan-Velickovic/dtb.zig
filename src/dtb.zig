@@ -96,7 +96,7 @@ pub const Node = struct {
         try node.formatNode(writer, 0);
     }
 
-    fn formatNode(node: Node, writer: anytype, depth: usize) std.os.WriteError!void {
+    fn formatNode(node: Node, writer: anytype, depth: usize) !void {
         try indent(writer, depth);
         try std.fmt.format(writer, "Node <{'}>\n", .{std.zig.fmtEscapes(node.name)});
         for (node.props) |p| {
@@ -413,9 +413,6 @@ test "parse" {
         try testing.expectEqual(@as(usize, 2), clocks.len);
         try testing.expectEqualSlices(u32, &.{0x8000}, clocks[0]);
         try testing.expectEqualSlices(u32, &.{0x8000}, clocks[1]);
-
-        // Make sure this works (and that the code gets compiled).
-        std.debug.print("{}\n", .{qemu_arm64});
     }
 
     {
@@ -451,13 +448,10 @@ test "parse" {
         try testing.expectEqual(@as(usize, 2), clocks.len);
         try testing.expectEqualSlices(u32, &.{ 0x85, 0x53 }, clocks[0]);
         try testing.expectEqualSlices(u32, &.{ 0x85, 0x162 }, clocks[1]);
-
-        // Print it out.
-        std.debug.print("{}\n", .{rockpro64});
     }
 }
 
-test "Traverser" {
+test "traverser" {
     var qemu_arm64: Traverser = undefined;
     try qemu_arm64.init(qemu_arm64_dtb);
 
