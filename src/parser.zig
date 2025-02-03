@@ -228,18 +228,36 @@ fn resolve(allocator: std.mem.Allocator, root: *dtb.Node, current: *dtb.Node) Er
 fn resolveProp(allocator: std.mem.Allocator, root: *dtb.Node, current: *dtb.Node, unres: dtb.PropUnresolved) !dtb.Prop {
     switch (unres) {
         .Reg => |v| {
-            const address_cells = (current.parent orelse return error.BadStructure).addressCells() orelse return error.MissingCells;
-            const size_cells = (current.parent orelse return error.BadStructure).sizeCells() orelse return error.MissingCells;
+            const address_cells = (current.parent orelse return error.BadStructure).addressCells() orelse {
+                std.log.err("missing reg address cells on node '{s}'", .{ current.name });
+                return error.MissingCells;
+            };
+            const size_cells = (current.parent orelse return error.BadStructure).sizeCells() orelse {
+                std.log.err("missing reg size cells on node '{s}'", .{ current.name });
+                return error.MissingCells;
+            };
             return dtb.Prop{ .Reg = try readArray(allocator, v, 2, [2]u32{ address_cells, size_cells }) };
         },
         .Ranges => |v| {
-            const address_cells = current.addressCells() orelse return error.MissingCells;
-            const parent_address_cells = (current.parent orelse return error.BadStructure).addressCells() orelse return error.MissingCells;
-            const size_cells = current.sizeCells() orelse return error.MissingCells;
+            const address_cells = current.addressCells() orelse {
+                std.log.err("missing ranges address cells on node '{s}'", .{ current.name });
+                return error.MissingCells;
+            };
+            const parent_address_cells = (current.parent orelse return error.BadStructure).addressCells() orelse {
+                std.log.err("missing ranges parent address cells on node '{s}'", .{ current.parent.?.name });
+                return error.MissingCells;
+            };
+            const size_cells = current.sizeCells() orelse {
+                std.log.err("missing ranges size cells on node '{s}'", .{ current.name });
+                return error.MissingCells;
+            };
             return dtb.Prop{ .Ranges = try readArray(allocator, v, 3, [3]u32{ address_cells, parent_address_cells, size_cells }) };
         },
         .Interrupts => |v| {
-            const interrupt_cells = current.interruptCells() orelse return error.MissingCells;
+            const interrupt_cells = current.interruptCells() orelse {
+                std.log.err("missing interrupt cells on node '{s}'", .{ current.name });
+                return error.MissingCells;
+            };
             const cs = try cells(allocator, v);
             defer allocator.free(cs);
             if (cs.len % interrupt_cells != 0) {
@@ -280,8 +298,14 @@ fn resolveProp(allocator: std.mem.Allocator, root: *dtb.Node, current: *dtb.Node
             while (cell_i < cs.len) {
                 const phandle = cs[cell_i];
                 cell_i += 1;
-                const target = root.findPHandle(phandle) orelse return error.MissingCells;
-                const clock_cells = target.prop(.ClockCells) orelse return error.MissingCells;
+                const target = root.findPHandle(phandle) orelse {
+                    std.log.err("could not find phandle '{}' for '{s}' field on node '{s}'", .{ phandle, @tagName(unres), current.name });
+                    return error.MissingCells;
+                };
+                const clock_cells = target.prop(.ClockCells) orelse {
+                    std.log.err("could not find clock cells for '{s}' field on node '{s}'", .{ @tagName(unres), current.name });
+                    return error.MissingCells;
+                };
                 var group = try allocator.alloc(u32, 1 + clock_cells);
                 errdefer allocator.free(group);
                 group[0] = phandle;
