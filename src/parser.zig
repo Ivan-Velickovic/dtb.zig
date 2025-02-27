@@ -18,7 +18,10 @@ pub fn parse(allocator: std.mem.Allocator, blob: []const u8) Error!*dtb.Node {
     var root =
         switch (try parser.traverser.event()) {
         .BeginNode => |node_name| try parser.handleNode(node_name, null, null),
-        else => return error.BadStructure,
+        else => {
+            std.log.err("blob has bad structure", .{});
+            return error.BadStructure;
+        }
     };
     errdefer root.deinit(allocator);
 
@@ -261,6 +264,7 @@ fn resolveProp(allocator: std.mem.Allocator, root: *dtb.Node, current: *dtb.Node
             const cs = try cells(allocator, v);
             defer allocator.free(cs);
             if (cs.len % interrupt_cells != 0) {
+                std.log.err("invalid interrupt cells on node '{s}'", .{ current.name });
                 return error.BadStructure;
             }
 
