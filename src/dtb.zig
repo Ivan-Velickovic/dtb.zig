@@ -139,6 +139,7 @@ pub const PropStatus = enum {
 };
 
 pub const Prop = union(enum) {
+    Model: []const u8,
     AddressCells: u32,
     SizeCells: u32,
     InterruptCells: u32,
@@ -174,6 +175,7 @@ pub const Prop = union(enum) {
         _ = fmt;
         _ = options;
         switch (prop) {
+            .Model  => |v| try std.fmt.format(writer, "model: {s}", .{v}),
             .AddressCells => |v| try std.fmt.format(writer, "#address-cells: 0x{x:0>2}", .{v}),
             .SizeCells => |v| try std.fmt.format(writer, "#size-cells: 0x{x:0>2}", .{v}),
             .InterruptCells => |v| try std.fmt.format(writer, "#interrupt-cells: 0x{x:0>2}", .{v}),
@@ -354,6 +356,7 @@ pub const Prop = union(enum) {
 
             .AssignedClockRates => |clock_rates| allocator.free(clock_rates),
 
+            .Model,
             .AddressCells,
             .SizeCells,
             .InterruptCells,
