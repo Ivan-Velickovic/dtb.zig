@@ -97,6 +97,8 @@ const Parser = struct {
     fn handleProp(self: *Parser, name: []const u8, value: []const u8) Error!dtb.Prop {
         if (std.mem.eql(u8, name, "model")) {
             return dtb.Prop{ .Model = string(value) };
+        } else if (std.mem.eql(u8, name, "stdout-path")) {
+            return dtb.Prop{ .StdoutPath = string(value) };
         } else if (std.mem.eql(u8, name, "#address-cells")) {
             return dtb.Prop{ .AddressCells = try integer(u32, value) };
         } else if (std.mem.eql(u8, name, "#size-cells")) {
