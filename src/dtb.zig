@@ -140,6 +140,7 @@ pub const PropStatus = enum {
 
 pub const Prop = union(enum) {
     Model: []const u8,
+    StdoutPath: []const u8,
     AddressCells: u32,
     SizeCells: u32,
     InterruptCells: u32,
@@ -176,6 +177,7 @@ pub const Prop = union(enum) {
         _ = options;
         switch (prop) {
             .Model  => |v| try std.fmt.format(writer, "model: {s}", .{v}),
+            .StdoutPath => |v| try std.fmt.format(writer, "stdout-path: {s}", .{v}),
             .AddressCells => |v| try std.fmt.format(writer, "#address-cells: 0x{x:0>2}", .{v}),
             .SizeCells => |v| try std.fmt.format(writer, "#size-cells: 0x{x:0>2}", .{v}),
             .InterruptCells => |v| try std.fmt.format(writer, "#interrupt-cells: 0x{x:0>2}", .{v}),
@@ -357,6 +359,7 @@ pub const Prop = union(enum) {
             .AssignedClockRates => |clock_rates| allocator.free(clock_rates),
 
             .Model,
+            .StdoutPath,
             .AddressCells,
             .SizeCells,
             .InterruptCells,
@@ -412,6 +415,8 @@ test "parse" {
             "memory",
             qemu_arm64.propAt(&.{"memory@40000000"}, .DeviceType).?,
         );
+
+        try testing.expectEqualStrings("/pl011@9000000", qemu_arm64.propAt(&.{ "chosen" }, .StdoutPath).?);
 
         try testing.expect(qemu_arm64.propAt(&.{ "intc@8000000" }, .InterruptController) != null);
 
