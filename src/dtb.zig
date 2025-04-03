@@ -141,6 +141,7 @@ pub const PropStatus = enum {
 pub const Prop = union(enum) {
     Model: []const u8,
     StdoutPath: []const u8,
+    DmaCoherent: void,
     AddressCells: u32,
     SizeCells: u32,
     InterruptCells: u32,
@@ -178,6 +179,7 @@ pub const Prop = union(enum) {
         switch (prop) {
             .Model  => |v| try std.fmt.format(writer, "model: {s}", .{v}),
             .StdoutPath => |v| try std.fmt.format(writer, "stdout-path: {s}", .{v}),
+            .DmaCoherent => try std.fmt.format(writer, "dma-coherent", .{}),
             .AddressCells => |v| try std.fmt.format(writer, "#address-cells: 0x{x:0>2}", .{v}),
             .SizeCells => |v| try std.fmt.format(writer, "#size-cells: 0x{x:0>2}", .{v}),
             .InterruptCells => |v| try std.fmt.format(writer, "#interrupt-cells: 0x{x:0>2}", .{v}),
@@ -360,6 +362,7 @@ pub const Prop = union(enum) {
 
             .Model,
             .StdoutPath,
+            .DmaCoherent,
             .AddressCells,
             .SizeCells,
             .InterruptCells,
@@ -419,6 +422,8 @@ test "parse" {
         try testing.expectEqualStrings("/pl011@9000000", qemu_arm64.propAt(&.{ "chosen" }, .StdoutPath).?);
 
         try testing.expect(qemu_arm64.propAt(&.{ "intc@8000000" }, .InterruptController) != null);
+
+        try testing.expect(qemu_arm64.propAt(&.{ "pcie@10000000" }, .DmaCoherent) != null);
 
         // It has an A53-compatible CPU.
         const compatible = qemu_arm64.propAt(&.{ "cpus", "cpu@0" }, .Compatible).?;

@@ -99,6 +99,8 @@ const Parser = struct {
             return dtb.Prop{ .Model = string(value) };
         } else if (std.mem.eql(u8, name, "stdout-path")) {
             return dtb.Prop{ .StdoutPath = string(value) };
+        } else if (std.mem.eql(u8, name, "dma-coherent")) {
+            return .DmaCoherent;
         } else if (std.mem.eql(u8, name, "#address-cells")) {
             return dtb.Prop{ .AddressCells = try integer(u32, value) };
         } else if (std.mem.eql(u8, name, "#size-cells")) {
