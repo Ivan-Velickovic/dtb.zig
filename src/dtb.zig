@@ -140,7 +140,11 @@ pub const PropStatus = enum {
 
 pub const Prop = union(enum) {
     TimebaseFrequency: u32,
+    RiscvIsa: []const u8,
+    RiscvIsaBase: []const u8,
+    RiscvIsaExtensions: [][]const u8,
     RiscvNdev: u32,
+    MmuType: []const u8,
     Method: []const u8,
     Model: []const u8,
     StdoutPath: []const u8,
@@ -181,8 +185,12 @@ pub const Prop = union(enum) {
         _ = options;
         switch (prop) {
             .TimebaseFrequency => |v| try std.fmt.format(writer, "timebase-frequency: <0x{x:0>2}>", .{v}),
+            .RiscvIsa => |v| try std.fmt.format(writer, "riscv,isa: {s}", .{v}),
+            .RiscvIsaBase => |v| try std.fmt.format(writer, "riscv,isa-base: {s}", .{v}),
+            .RiscvIsaExtensions => |v| try (StringListFormatter{ .string_list = v }).write("riscv,isa-extensions: ", writer),
             .RiscvNdev => |v| try std.fmt.format(writer, "riscv,ndev: <0x{x:0>2}>", .{v}),
             .Method => |v| try std.fmt.format(writer, "method: {s}", .{v}),
+            .MmuType => |v| try std.fmt.format(writer, "mmu-type: {s}", .{v}),
             .Model  => |v| try std.fmt.format(writer, "model: {s}", .{v}),
             .StdoutPath => |v| try std.fmt.format(writer, "stdout-path: {s}", .{v}),
             .DmaCoherent => try std.fmt.format(writer, "dma-coherent", .{}),
@@ -342,6 +350,7 @@ pub const Prop = union(enum) {
             .Reg => |v| allocator.free(v),
             .Ranges => |v| allocator.free(v),
 
+            .RiscvIsaExtensions,
             .Compatible,
             .ClockNames,
             .ClockOutputNames,
@@ -367,7 +376,10 @@ pub const Prop = union(enum) {
             .AssignedClockRates => |clock_rates| allocator.free(clock_rates),
 
             .TimebaseFrequency,
+            .RiscvIsa,
+            .RiscvIsaBase,
             .RiscvNdev,
+            .MmuType,
             .Method,
             .Model,
             .StdoutPath,
