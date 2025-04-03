@@ -139,6 +139,8 @@ pub const PropStatus = enum {
 };
 
 pub const Prop = union(enum) {
+    TimebaseFrequency: u32,
+    RiscvNdev: u32,
     Method: []const u8,
     Model: []const u8,
     StdoutPath: []const u8,
@@ -178,6 +180,8 @@ pub const Prop = union(enum) {
         _ = fmt;
         _ = options;
         switch (prop) {
+            .TimebaseFrequency => |v| try std.fmt.format(writer, "timebase-frequency: <0x{x:0>2}>", .{v}),
+            .RiscvNdev => |v| try std.fmt.format(writer, "riscv,ndev: <0x{x:0>2}>", .{v}),
             .Method => |v| try std.fmt.format(writer, "method: {s}", .{v}),
             .Model  => |v| try std.fmt.format(writer, "model: {s}", .{v}),
             .StdoutPath => |v| try std.fmt.format(writer, "stdout-path: {s}", .{v}),
@@ -362,6 +366,8 @@ pub const Prop = union(enum) {
 
             .AssignedClockRates => |clock_rates| allocator.free(clock_rates),
 
+            .TimebaseFrequency,
+            .RiscvNdev,
             .Method,
             .Model,
             .StdoutPath,
