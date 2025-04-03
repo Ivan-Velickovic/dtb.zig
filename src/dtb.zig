@@ -139,6 +139,7 @@ pub const PropStatus = enum {
 };
 
 pub const Prop = union(enum) {
+    Method: []const u8,
     Model: []const u8,
     StdoutPath: []const u8,
     DmaCoherent: void,
@@ -177,6 +178,7 @@ pub const Prop = union(enum) {
         _ = fmt;
         _ = options;
         switch (prop) {
+            .Method => |v| try std.fmt.format(writer, "method: {s}", .{v}),
             .Model  => |v| try std.fmt.format(writer, "model: {s}", .{v}),
             .StdoutPath => |v| try std.fmt.format(writer, "stdout-path: {s}", .{v}),
             .DmaCoherent => try std.fmt.format(writer, "dma-coherent", .{}),
@@ -360,6 +362,7 @@ pub const Prop = union(enum) {
 
             .AssignedClockRates => |clock_rates| allocator.free(clock_rates),
 
+            .Method,
             .Model,
             .StdoutPath,
             .DmaCoherent,
@@ -419,6 +422,8 @@ test "parse" {
             qemu_arm64.propAt(&.{"memory@40000000"}, .DeviceType).?,
         );
 
+        try testing.expectEqualStrings(qemu_arm64.propAt(&.{"psci"}, .Method).?, "hvc");
+
         try testing.expectEqualStrings("/pl011@9000000", qemu_arm64.propAt(&.{ "chosen" }, .StdoutPath).?);
 
         try testing.expect(qemu_arm64.propAt(&.{ "intc@8000000" }, .InterruptController) != null);
@@ -458,6 +463,8 @@ test "parse" {
     {
         var rockpro64 = try parse(std.testing.allocator, rockpro64_dtb);
         defer rockpro64.deinit(std.testing.allocator);
+
+        try testing.expectEqualStrings(rockpro64.propAt(&.{"psci"}, .Method).?, "smc");
 
         // This ROCKPro64 DTB has a serial at 0xff1a0000.
         const serial = rockpro64.child("serial@ff1a0000").?;
