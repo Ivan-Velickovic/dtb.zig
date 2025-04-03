@@ -12,7 +12,7 @@ pub const Node = struct {
     parent: ?*Node,
     children: []*Node,
 
-    pub fn propAt(start: *const Node, path: []const []const u8, comptime prop_tag: std.meta.Tag(Prop)) ?std.meta.TagPayload(Prop, prop_tag) {
+    pub fn propAt(start: *const Node, path: []const []const u8, comptime prop_tag: std.meta.Tag(Prop)) ?@FieldType(Prop, @tagName(prop_tag)) {
         var node: *const Node = start;
         var i: usize = 0;
         while (i < path.len) : (i += 1) {
@@ -30,7 +30,7 @@ pub const Node = struct {
         return null;
     }
 
-    pub fn prop(node: *const Node, comptime prop_tag: std.meta.Tag(Prop)) ?std.meta.TagPayload(Prop, prop_tag) {
+    pub fn prop(node: *const Node, comptime prop_tag: std.meta.Tag(Prop)) ?@FieldType(Prop, @tagName(prop_tag)) {
         for (node.props) |p| {
             if (p == prop_tag) {
                 return @field(p, @tagName(prop_tag));
