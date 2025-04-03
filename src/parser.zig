@@ -95,7 +95,11 @@ const Parser = struct {
     }
 
     fn handleProp(self: *Parser, name: []const u8, value: []const u8) Error!dtb.Prop {
-        if (std.mem.eql(u8, name, "method")) {
+        if (std.mem.eql(u8, name, "timebase-frequency")) {
+            return dtb.Prop{ .TimebaseFrequency = try integer(u32, value) };
+        } else if (std.mem.eql(u8, name, "riscv,ndev")) {
+            return dtb.Prop{ .RiscvNdev = try integer(u32, value) };
+        } else if (std.mem.eql(u8, name, "method")) {
             return dtb.Prop{ .Method = string(value) };
         } else if (std.mem.eql(u8, name, "model")) {
             return dtb.Prop{ .Model = string(value) };
