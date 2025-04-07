@@ -109,6 +109,8 @@ const Parser = struct {
             return dtb.Prop{ .MmuType = string(value) };
         } else if (std.mem.eql(u8, name, "method")) {
             return dtb.Prop{ .Method = string(value) };
+        } else if (std.mem.eql(u8, name, "enable-method")) {
+            return dtb.Prop{ .EnableMethod = string(value) };
         } else if (std.mem.eql(u8, name, "model")) {
             return dtb.Prop{ .Model = string(value) };
         } else if (std.mem.eql(u8, name, "stdout-path")) {
