@@ -122,10 +122,11 @@ pub const Node = struct {
     }
 };
 
-pub const PropStatus = enum {
-    Okay,
-    Disabled,
-    Fail,
+pub const PropStatus = union(enum) {
+    Okay: void,
+    Disabled: void,
+    Fail: ?[]const u8,
+    Reserved: void,
 
     pub fn format(status: PropStatus, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
         _ = fmt;
@@ -133,7 +134,14 @@ pub const PropStatus = enum {
         switch (status) {
             .Okay => try writer.writeAll("okay"),
             .Disabled => try writer.writeAll("disabled"),
-            .Fail => try writer.writeAll("fail"),
+            .Fail => |maybe_value| {
+                if (maybe_value) |value| {
+                    try std.fmt.format(writer, "fail-{s}", .{ value });
+                } else {
+                    try writer.writeAll("fail");
+                }
+            },
+            .Reserved => try writer.writeAll("reserved"),
         }
     }
 };

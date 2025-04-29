@@ -229,7 +229,11 @@ const Parser = struct {
         } else if (std.mem.eql(u8, value, "disabled\x00")) {
             return dtb.PropStatus.Disabled;
         } else if (std.mem.eql(u8, value, "fail\x00")) {
-            return dtb.PropStatus.Fail;
+            return dtb.PropStatus{ .Fail = null };
+        } else if (value.len == 8 and std.mem.eql(u8, value, "fail-")) {
+            return dtb.PropStatus{ .Fail = value[5..] };
+        } else if (std.mem.eql(u8, value, "reserved\x00")) {
+            return dtb.PropStatus.Reserved;
         }
         return error.BadValue;
     }
