@@ -66,6 +66,8 @@ const Parser = struct {
         const node = try self.allocator.create(dtb.Node);
         errdefer self.allocator.destroy(node);
 
+        const parse_props = !std.mem.eql(u8, node_name, "__symbols__");
+
         while (true) {
             switch (try self.traverser.event()) {
                 .BeginNode => |child_name| {
@@ -77,9 +79,11 @@ const Parser = struct {
                     break;
                 },
                 .Prop => |prop| {
-                    var parsedProp = try self.handleProp(prop.name, prop.value);
-                    errdefer parsedProp.deinit(self.allocator);
-                    try props.append(parsedProp);
+                    if (parse_props) {
+                        var parsedProp = try self.handleProp(prop.name, prop.value);
+                        errdefer parsedProp.deinit(self.allocator);
+                        try props.append(parsedProp);
+                    }
                 },
                 .End => return error.Internal,
             }
