@@ -333,6 +333,9 @@ fn resolveProp(allocator: std.mem.Allocator, root: *dtb.Node, current: *dtb.Node
             while (cell_i < cs.len) {
                 const phandle = cs[cell_i];
                 cell_i += 1;
+                if (phandle == 0) {
+                    continue;
+                }
                 const target = root.findPHandle(phandle) orelse {
                     std.log.err("could not find phandle '{}' for '{s}' field on node '{s}'", .{ phandle, @tagName(unres), current.name });
                     return error.MissingCells;
