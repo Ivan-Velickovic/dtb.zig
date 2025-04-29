@@ -80,7 +80,10 @@ const Parser = struct {
                 },
                 .Prop => |prop| {
                     if (parse_props) {
-                        var parsedProp = try self.handleProp(prop.name, prop.value);
+                        var parsedProp = self.handleProp(prop.name, prop.value) catch |e| {
+                            std.log.err("failed to handle prop '{s}' for node '{s}': {any}", .{ prop.name, node_name, e });
+                            return e;
+                        };
                         errdefer parsedProp.deinit(self.allocator);
                         try props.append(parsedProp);
                     }
