@@ -86,6 +86,8 @@ const Parser = struct {
                         };
                         errdefer parsedProp.deinit(self.allocator);
                         try props.append(parsedProp);
+                    } else {
+                        try props.append(.{ .Unknown = .{ .name = prop.name, .value = prop.value } });
                     }
                 },
                 .End => return error.Internal,
