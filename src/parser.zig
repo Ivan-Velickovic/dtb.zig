@@ -1,7 +1,9 @@
 const std = @import("std");
 const dtb = @import("dtb.zig");
-usingnamespace @import("util.zig");
+const util = @import("util.zig");
 const traverser = @import("traverser.zig");
+
+const structBigToNative = util.structBigToNative;
 
 pub const Error = traverser.Error || std.mem.Allocator.Error || error{
     MissingCells,
@@ -49,18 +51,18 @@ const Parser = struct {
     }
 
     fn handleNode(self: *Self, node_name: []const u8, root: ?*dtb.Node, parent: ?*dtb.Node) Error!*dtb.Node {
-        var props = std.ArrayList(dtb.Prop).init(self.allocator);
-        var children = std.ArrayList(*dtb.Node).init(self.allocator);
+        var props = std.ArrayList(dtb.Prop){};
+        var children = std.ArrayList(*dtb.Node){};
 
         errdefer {
             for (props.items) |p| {
                 p.deinit(self.allocator);
             }
-            props.deinit();
+            props.deinit(self.allocator);
             for (children.items) |c| {
                 c.deinit(self.allocator);
             }
-            children.deinit();
+            children.deinit(self.allocator);
         }
 
         const node = try self.allocator.create(dtb.Node);
@@ -73,7 +75,7 @@ const Parser = struct {
                 .BeginNode => |child_name| {
                     var subnode = try self.handleNode(child_name, root orelse node, node);
                     errdefer subnode.deinit(self.allocator);
-                    try children.append(subnode);
+                    try children.append(self.allocator, subnode);
                 },
                 .EndNode => {
                     break;
@@ -85,9 +87,9 @@ const Parser = struct {
                             return e;
                         };
                         errdefer parsedProp.deinit(self.allocator);
-                        try props.append(parsedProp);
+                        try props.append(self.allocator, parsedProp);
                     } else {
-                        try props.append(.{ .Unknown = .{ .name = prop.name, .value = prop.value } });
+                        try props.append(self.allocator, .{ .Unknown = .{ .name = prop.name, .value = prop.value } });
                     }
                 },
                 .End => return error.Internal,
@@ -95,10 +97,10 @@ const Parser = struct {
         }
         node.* = .{
             .name = node_name,
-            .props = try props.toOwnedSlice(),
+            .props = try props.toOwnedSlice(self.allocator),
             .root = root orelse node,
             .parent = parent,
-            .children = try children.toOwnedSlice(),
+            .children = try children.toOwnedSlice(self.allocator),
         };
         return node;
     }
@@ -305,7 +307,7 @@ fn resolveProp(allocator: std.mem.Allocator, root: *dtb.Node, current: *dtb.Node
             var groups = try std.ArrayList([]u32).initCapacity(allocator, group_count);
             errdefer {
                 for (groups.items) |group| allocator.free(group);
-                groups.deinit();
+                groups.deinit(allocator);
             }
 
             var group_i: usize = 0;
@@ -318,17 +320,17 @@ fn resolveProp(allocator: std.mem.Allocator, root: *dtb.Node, current: *dtb.Node
                 groups.appendAssumeCapacity(group);
             }
 
-            return dtb.Prop{ .Interrupts = try groups.toOwnedSlice() };
+            return dtb.Prop{ .Interrupts = try groups.toOwnedSlice(allocator) };
         },
         .Clocks,
         .AssignedClocks,
         => |v| {
             const cs = try cells(allocator, v);
             defer allocator.free(cs);
-            var groups = std.ArrayList([]u32).init(allocator);
+            var groups = std.ArrayList([]u32){};
             errdefer {
                 for (groups.items) |group| allocator.free(group);
-                groups.deinit();
+                groups.deinit(allocator);
             }
 
             var cell_i: usize = 0;
@@ -354,12 +356,12 @@ fn resolveProp(allocator: std.mem.Allocator, root: *dtb.Node, current: *dtb.Node
                     group[item_i + 1] = cs[cell_i];
                     cell_i += 1;
                 }
-                try groups.append(group);
+                try groups.append(allocator, group);
             }
 
             return switch (unres) {
-                .Clocks => dtb.Prop{ .Clocks = try groups.toOwnedSlice() },
-                .AssignedClocks => dtb.Prop{ .AssignedClocks = try groups.toOwnedSlice() },
+                .Clocks => dtb.Prop{ .Clocks = try groups.toOwnedSlice(allocator) },
+                .AssignedClocks => dtb.Prop{ .AssignedClocks = try groups.toOwnedSlice(allocator) },
                 else => unreachable,
             };
         },
